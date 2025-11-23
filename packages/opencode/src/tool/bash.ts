@@ -108,6 +108,26 @@ export const BashTool = Tool.define("bash", async () => {
         if (["cd", "rm", "cp", "mv", "mkdir", "touch", "chmod", "chown"].includes(command[0])) {
           for (const arg of command.slice(1)) {
             if (arg.startsWith("-") || (command[0] === "chmod" && arg.startsWith("+"))) continue
+            const literalArg = (() => {
+              if (arg.length >= 2) {
+                const first = arg[0]
+                const last = arg[arg.length - 1]
+                if ((first === "'" && last === "'") || (first === '"' && last === '"')) {
+                  return arg.slice(1, -1)
+                }
+              }
+              return arg
+            })()
+            const hasExpansionChars = /[~*$?\[\]`$]/.test(literalArg)
+            const hasWhitespace = /\s/.test(literalArg)
+            if (!hasExpansionChars && !hasWhitespace) {
+              const normalizedLiteral = path.normalize(
+                path.isAbsolute(literalArg) ? literalArg : path.join(Instance.directory, literalArg),
+              )
+              if (Filesystem.contains(Instance.directory, normalizedLiteral)) {
+                continue
+              }
+            }
             const resolved = await $`realpath ${arg}`
               .cwd(cwd)
               .quiet()
@@ -227,6 +247,15 @@ export const BashTool = Tool.define("bash", async () => {
           reject(error)
         })
       })
+<<<<<<< HEAD
+=======
+
+      if (metadataTimer) {
+        clearTimeout(metadataTimer)
+        metadataTimer = undefined
+      }
+      flushMetadata()
+>>>>>>> 8d614718e (Make bash run commands in symlinked folders)
 
       let resultMetadata: String[] = ["<bash_metadata>"]
 
