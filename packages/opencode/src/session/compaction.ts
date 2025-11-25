@@ -33,8 +33,12 @@ export namespace SessionCompaction {
     const context = input.model.limit.context
     if (context === 0) return false
     const count = input.tokens.input + input.tokens.cache.read + input.tokens.output
-    const output = Math.min(input.model.limit.output, SessionPrompt.OUTPUT_TOKEN_MAX) || SessionPrompt.OUTPUT_TOKEN_MAX
-    const usable = context - output
+    const isGPT5 = input.model.id.includes("gpt-5")
+    const output = ( isGPT5 ?
+      Math.max(input.model.limit.output, SessionPrompt.OUTPUT_TOKEN_MAX) :
+      Math.min(input.model.limit.output, SessionPrompt.OUTPUT_TOKEN_MAX) )
+      || SessionPrompt.OUTPUT_TOKEN_MAX
+    const usable = context - output - (isGPT5 ? 10000 : 0)
     return count > usable
   }
 
